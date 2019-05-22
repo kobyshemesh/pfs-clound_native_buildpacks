@@ -1,0 +1,171 @@
+
+
+
+Future technologies on Kubernetes with PKS
+==========================================
+
+On Macbook Pro:
+
+gcloud config set project pa-oshopen
+
+gloud compute ssh ubuntu@jbox-jx
+
+
+Setup PKS access:
+-----------------
+
+
+pks login -k -a ${PKS_API_URL} -u ${PKS_CLI_USERNAME} -p ${PKS_CLI_PASSWORD} --skip-ssl-validation
+
+pks get-credentials ${CLUSTER_NAME}
+
+Demo Cloud Native Buildpacks
+----------------------------
+	
+		Explanation image for buildpacks: https://docs-pcf-staging.cfapps.io/pfs/0-2/images/concepts-functions-and-invokers.png
+
+
+git clone https://github.com/kobyshemesh/k8s-with-no-dockerfile-no-yaml-files
+
+cd k8s-with-no-dockerfile-no-yaml-files
+
+		Now, without writing a Dockerfile, and without even building the Java project or downloading the dependencies, we create a production ready, Cloud Native Image:
+
+pack build kshamama/noyaml --publish
+cd ~
+
+helm create --starter=spring-boot noyaml
+
+vi noyaml/values.yaml
+#add your repository
+
+helm install --namespace noyaml noyaml
+
+kubectl get pods -n noyaml
+
+kubectl get svc -n noyaml
+
+		Open external IP.
+
+
+Configure PFS
+=============
+
+		Setup separate terminal window that always shows this command:
+
+kubectl get pods -w
+
+		Setup registry:
+
+export REGISTRY=harbor.pks.pvtl.eu
+export REGISTRY_USER=pfs-demo
+
+
+
+Demo Java Function
+==================
+
+		Show source code in https://github.com/projectriff-samples/java-boot-uppercase.git
+
+		Create a Java function with PFS:
+
+pfs function create uppercase \
+  --git-repo https://github.com/projectriff-samples/java-boot-uppercase.git \
+  --image $REGISTRY/$REGISTRY_USER/uppercase \
+  --verbose
+
+		Invoke Java function:
+
+pfs service invoke uppercase --text -- -w '\n' -d 'hello PFS'
+
+
+Demo JavaScript Function
+========================
+
+		Show source code in https://github.com/projectriff-samples/hello.js
+
+		Create a Javascript function with PFS:
+
+pfs function create hello \
+--git-repo https://github.com/projectriff-samples/hello.js \
+--artifact hello.js \
+--image $REGISTRY/$REGISTRY_USER/hello \
+--verbose
+
+		Invoke JavaScript function:
+
+pfs service invoke hello --text -- -w '\n' -d 'PFS'
+
+
+Demo BASH (Command) Function
+============================
+
+		Show source code in https://github.com/projectriff-samples/command-wordcount
+
+		Create a BASH (Command) function with PFS:
+
+pfs function create wordcount \
+--git-repo https://github.com/projectriff-samples/command-wordcount \
+--artifact wordcount.sh \
+--image $REGISTRY/$REGISTRY_USER/wordcount \
+--verbose
+
+		Invoke BASH function:
+
+curl -s https://www.constitution.org/usdeclar.txt \
+    | pfs service invoke wordcount --text -- -d @- 
+
+
+curl -s https://www.gov.il/en/subjects/certificates_and_passports\
+    | pfs service invoke wordcount --text -- -d @-
+
+		See list of functions:
+
+pfs service list
+
+		To build a new version from source code, just update:
+
+pfs service update hello
+
+
+
+
+
+---
+
+
+Cleanup:
+
+pfs service list
+
+pfs service delete hello
+pfs service delete uppercase
+pfs service delete wordcount
+kubectl delete ns noyaml
+rm -rf ~/noyaml
+rm -rf ~/k8s-with-no-dockerfile-no-yaml-files
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
